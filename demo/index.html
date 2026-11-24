@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Traductor de Ritmos — demo</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:#f4f1ea;color:#1c1c1c}
+  .wrap{max-width:600px;margin:0 auto;padding:20px 16px 48px}
+  header{text-align:center;margin-bottom:20px}
+  h1{font-size:26px;margin:0 0 4px}
+  header p{margin:0;color:#5a5a5a;font-size:15px}
+  .tag{display:inline-block;margin-top:10px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#7a1f2b;border:1px solid #7a1f2b;border-radius:999px;padding:4px 10px}
+  section{background:#fff;border:1px solid #e3ddd0;border-radius:14px;padding:16px;margin-bottom:16px}
+  h2{font-size:17px;margin:0 0 2px}
+  .bpm{color:#5a5a5a;font-size:13px;margin:0 0 12px}
+  .grid{margin:10px 0 4px}
+  .nums,.row{display:grid;grid-template-columns:92px repeat(16,1fr);gap:3px;align-items:center}
+  .nums span{font-size:9px;color:#9a9a9a;text-align:center}
+  .nums span:first-child{visibility:hidden}
+  .row{margin-top:3px}
+  .lbl{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cell{aspect-ratio:1/1;border-radius:4px;background:#ece7db;border:1px solid #ddd5c2}
+  .cell.on-trap{background:#d64541;border-color:#b7322e}
+  .cell.on-dem{background:#1e7d32;border-color:#146024}
+  .cell.now{outline:2px solid #1c1c1c;outline-offset:1px}
+  .beats{display:grid;grid-template-columns:92px repeat(4,1fr);gap:3px;margin-top:6px}
+  .beats span{font-size:11px;color:#9a9a9a;text-align:center}
+  .beats span:first-child{visibility:hidden}
+  .play{width:100%;margin-top:14px;padding:13px;font-size:16px;font-weight:700;border:0;border-radius:10px;color:#fff;cursor:pointer}
+  .play.trap{background:#d64541}
+  .play.dem{background:#1e7d32}
+  .play.stop{background:#333}
+  #translateBtn{display:block;width:100%;padding:15px;font-size:17px;font-weight:800;border:0;border-radius:12px;background:#7a1f2b;color:#fff;cursor:pointer;margin:4px 0 16px}
+  .expli h2{margin-bottom:8px}
+  .expli ul{margin:0;padding-left:20px;font-size:15px;line-height:1.55}
+  .expli li{margin-bottom:8px}
+  .expli b{color:#7a1f2b}
+  .wav{width:100%;padding:14px;font-size:16px;font-weight:700;border:2px solid #1e7d32;border-radius:12px;background:#fff;color:#1e7d32;cursor:pointer}
+  footer{text-align:center;color:#8a8a8a;font-size:12px;margin-top:20px;line-height:1.5}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="tag">Demo — Proyecto GitHub</span>
+    <h1>Traductor de Ritmos</h1>
+    <p>Del trap al dembow, con reglas claras. Escucha los dos.</p>
+  </header>
+
+  <section id="secTrap">
+    <h2>1 · El original: Trap</h2>
+    <p class="bpm">140 BPM · un compás de 16 pasos</p>
+    <div class="grid" id="gridTrap"></div>
+    <button class="play trap" id="playTrap">▶ Tocar el trap</button>
+  </section>
+
+  <button id="translateBtn">Traducir a dembow ↓</button>
+
+  <section id="secDem" hidden>
+    <h2>2 · El traducido: Dembow</h2>
+    <p class="bpm">110 BPM · el mismo compás, traducido</p>
+    <div class="grid" id="gridDem"></div>
+    <button class="play dem" id="playDem">▶ Tocar el dembow</button>
+  </section>
+
+  <section class="expli" id="secExpli" hidden>
+    <h2>Qué cambió en la traducción</h2>
+    <ul>
+      <li><b>La velocidad baja de 140 a 110 BPM.</b> El dembow es más lento y más pesado.</li>
+      <li><b>El bombo se ordena.</b> En el trap da golpes sueltos (pasos 1, 8 y 11). En el dembow marca los 4 tiempos del compás (pasos 1, 5, 9 y 13). Es el piso.</li>
+      <li><b>La caja se mueve al tresillo 3+3+2</b> (pasos 4, 7, 12 y 15). En el trap era un solo golpe en el tiempo 3. El tresillo es el sello del dembow: tum-ta-ta, tum-ta-ta.</li>
+      <li><b>Los hi-hats se calman.</b> De 16 golpes seguidos pasan a 8 (uno sí, uno no). El dembow respira.</li>
+      <li><b>El hi-hat abierto se quita.</b> El dembow no lo usa.</li>
+      <li><b>Se añade el bajo 808</b> (pasos 1, 7, 9 y 15). En el trap el 808 era el bombo; aquí el bajo es otra voz que sigue al bombo y a la caja.</li>
+    </ul>
+  </section>
+
+  <button class="wav" id="wavBtn" hidden>⬇ Bajar el dembow en WAV</button>
+
+  <footer>
+    Demo para Geral Pink · Proyecto GitHub Traductor de Ritmos<br>
+    El patrón del dembow es el de Dembow Lab ("Dembow clásico"), tocado a 110 BPM.<br>
+    Esto no es una micro app.
+  </footer>
+</div>
+
+<script>
+"use strict";
+// ---- Patrones (pasos 0-15) ----
+// Trap clásico: hi-hats en semicorcheas, bombo 808 suelto, caja en el tiempo 3 (paso 8), hi-hat abierto en contratiempos.
+const TRAP = {
+  name: "Trap", bpm: 140,
+  rows: [
+    { id: "kick",  label: "Bombo 808",       steps: [0, 7, 10] },
+    { id: "snare", label: "Caja",            steps: [8] },
+    { id: "hat",   label: "Hi-hat",          steps: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15] },
+    { id: "ohat",  label: "Hi-hat abierto",  steps: [2, 10] }
+  ]
+};
+// Dembow auténtico, tomado del preset "Dembow clásico" de Dembow Lab, tocado a 110 BPM:
+// bombo 0,4,8,12 · caja 3,6,11,14 (tresillo 3+3+2) · hi-hat en corcheas · bajo 808 en 0,6,8,14.
+const DEMBOW = {
+  name: "Dembow", bpm: 110,
+  rows: [
+    { id: "kick",  label: "Bombo",    steps: [0, 4, 8, 12] },
+    { id: "snare", label: "Caja",     steps: [3, 6, 11, 14] },
+    { id: "hat",   label: "Hi-hat",   steps: [0, 2, 4, 6, 8, 10, 12, 14] },
+    { id: "bass",  label: "Bajo 808", steps: [0, 6, 8, 14] }
+  ]
+};
+
+// ---- Síntesis (funciona con AudioContext y con OfflineAudioContext) ----
+function noiseBuf(ctx) {
+  if (ctx._nb) return ctx._nb;
+  const len = ctx.sampleRate;
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  ctx._nb = buf;
+  return buf;
+}
+function playKick(ctx, t, out) {
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = "sine";
+  o.frequency.setValueAtTime(160, t);
+  o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+  g.gain.setValueAtTime(0.8, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+  o.connect(g); g.connect(out);
+  o.start(t); o.stop(t + 0.4);
+}
+function playSnare(ctx, t, out) {
+  const n = ctx.createBufferSource(); n.buffer = noiseBuf(ctx);
+  const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 1800; bp.Q.value = 0.8;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.45, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+  n.connect(bp); bp.connect(g); g.connect(out);
+  n.start(t); n.stop(t + 0.2);
+  const o = ctx.createOscillator(); o.type = "triangle"; o.frequency.value = 190;
+  const g2 = ctx.createGain();
+  g2.gain.setValueAtTime(0.3, t);
+  g2.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+  o.connect(g2); g2.connect(out);
+  o.start(t); o.stop(t + 0.12);
+}
+function playHat(ctx, t, out, open) {
+  const n = ctx.createBufferSource(); n.buffer = noiseBuf(ctx);
+  const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 8000;
+  const g = ctx.createGain();
+  const dur = open ? 0.3 : 0.05;
+  g.gain.setValueAtTime(open ? 0.32 : 0.28, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  n.connect(hp); hp.connect(g); g.connect(out);
+  n.start(t); n.stop(t + dur + 0.02);
+}
+function playBass(ctx, t, out) {
+  const o = ctx.createOscillator(); o.type = "sine";
+  o.frequency.setValueAtTime(110, t);
+  o.frequency.exponentialRampToValueAtTime(55, t + 0.1);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.55, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+  o.connect(g); g.connect(out);
+  o.start(t); o.stop(t + 0.55);
+}
+function playSound(ctx, id, t, out) {
+  if (id === "kick") playKick(ctx, t, out);
+  else if (id === "snare") playSnare(ctx, t, out);
+  else if (id === "hat") playHat(ctx, t, out, false);
+  else if (id === "ohat") playHat(ctx, t, out, true);
+  else if (id === "bass") playBass(ctx, t, out);
+}
+
+// ---- Render offline (para verificación y para exportar WAV) ----
+function renderPattern(pattern, bars) {
+  bars = bars || 2;
+  const sr = 44100;
+  const stepDur = 60 / pattern.bpm / 4;
+  const dur = stepDur * 16 * bars + 0.6;
+  const off = new OfflineAudioContext(2, Math.ceil(sr * dur), sr);
+  const master = off.createGain(); master.gain.value = 0.75;
+  const comp = off.createDynamicsCompressor();
+  comp.threshold.value = -12; comp.knee.value = 20; comp.ratio.value = 8;
+  comp.attack.value = 0.003; comp.release.value = 0.2;
+  master.connect(comp); comp.connect(off.destination);
+  for (let b = 0; b < bars; b++) {
+    for (let s = 0; s < 16; s++) {
+      const t = b * 16 * stepDur + s * stepDur;
+      for (const row of pattern.rows) {
+        if (row.steps.indexOf(s) !== -1) playSound(off, row.id, t, master);
+      }
+    }
+  }
+  return off.startRendering();
+}
+function bufferToWav(buffer) {
+  const nCh = buffer.numberOfChannels, sr = buffer.sampleRate, len = buffer.length * nCh * 2;
+  const ab = new ArrayBuffer(44 + len), v = new DataView(ab);
+  function str(o, s) { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); }
+  str(0, "RIFF"); v.setUint32(4, 36 + len, true); str(8, "WAVE"); str(12, "fmt ");
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, nCh, true);
+  v.setUint32(24, sr, true); v.setUint32(28, sr * nCh * 2, true); v.setUint16(32, nCh * 2, true);
+  v.setUint16(34, 16, true); str(36, "data"); v.setUint32(40, len, true);
+  const chans = [];
+  for (let c = 0; c < nCh; c++) chans.push(buffer.getChannelData(c));
+  let o = 44;
+  for (let i = 0; i < buffer.length; i++) {
+    for (let c = 0; c < nCh; c++) {
+      let x = Math.max(-1, Math.min(1, chans[c][i]));
+      v.setInt16(o, x < 0 ? x * 0x8000 : x * 0x7FFF, true);
+      o += 2;
+    }
+  }
+  return new Blob([ab], { type: "audio/wav" });
+}
+
+// ---- Rejillas ----
+function buildGrid(el, pattern, cls) {
+  el.innerHTML = "";
+  const nums = document.createElement("div");
+  nums.className = "nums";
+  nums.innerHTML = "<span></span>" + Array.from({length: 16}, (_, i) => "<span>" + (i + 1) + "</span>").join("");
+  el.appendChild(nums);
+  for (const row of pattern.rows) {
+    const r = document.createElement("div");
+    r.className = "row";
+    let html = '<span class="lbl">' + row.label + "</span>";
+    for (let s = 0; s < 16; s++) {
+      html += '<span class="cell' + (row.steps.indexOf(s) !== -1 ? " " + cls : "") + '" data-step="' + s + '"></span>';
+    }
+    r.innerHTML = html;
+    el.appendChild(r);
+  }
+  const beats = document.createElement("div");
+  beats.className = "beats";
+  beats.innerHTML = "<span></span><span>1</span><span>2</span><span>3</span><span>4</span>";
+  el.appendChild(beats);
+}
+buildGrid(document.getElementById("gridTrap"), TRAP, "on-trap");
+buildGrid(document.getElementById("gridDem"), DEMBOW, "on-dem");
+
+// ---- Reproductor en vivo (lookahead) ----
+let audioCtx = null;
+let players = {};
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+function makePlayer(pattern, gridEl, btn) {
+  const p = { pattern, gridEl, btn, playing: false, step: 0, nextTime: 0, timer: null, raf: null };
+  function scheduleStep(step, t) {
+    const ctx = audioCtx;
+    const master = p.master;
+    for (const row of pattern.rows) {
+      if (row.steps.indexOf(step) !== -1) playSound(ctx, row.id, t, master);
+    }
+  }
+  function tick() {
+    const ahead = 0.12;
+    while (p.nextTime < audioCtx.currentTime + ahead) {
+      scheduleStep(p.step, p.nextTime);
+      p.nextTime += 60 / pattern.bpm / 4;
+      p.step = (p.step + 1) % 16;
+    }
+  }
+  function draw() {
+    if (!p.playing) return;
+    const stepDur = 60 / pattern.bpm / 4;
+    const elapsed = audioCtx.currentTime - p.startTime;
+    const cur = Math.floor(elapsed / stepDur) % 16;
+    const cells = gridEl.querySelectorAll(".cell");
+    cells.forEach(c => c.classList.toggle("now", Number(c.dataset.step) === cur));
+    p.raf = requestAnimationFrame(draw);
+  }
+  p.start = function () {
+    stopAll();
+    const ctx = getCtx();
+    p.master = ctx.createGain(); p.master.gain.value = 0.75;
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -12; comp.knee.value = 20; comp.ratio.value = 8;
+    comp.attack.value = 0.003; comp.release.value = 0.2;
+    p.master.connect(comp); comp.connect(ctx.destination);
+    p.playing = true; p.step = 0;
+    p.startTime = ctx.currentTime + 0.05;
+    p.nextTime = p.startTime;
+    p.timer = setInterval(tick, 30);
+    tick();
+    draw();
+    btn.textContent = "■ Parar";
+    btn.classList.add("stop");
+  };
+  p.stop = function () {
+    p.playing = false;
+    if (p.timer) clearInterval(p.timer);
+    if (p.raf) cancelAnimationFrame(p.raf);
+    gridEl.querySelectorAll(".cell").forEach(c => c.classList.remove("now"));
+    btn.textContent = "▶ Tocar el " + pattern.name.toLowerCase();
+    btn.classList.remove("stop");
+  };
+  return p;
+}
+function stopAll() {
+  for (const k in players) if (players[k].playing) players[k].stop();
+}
+players.trap = makePlayer(TRAP, document.getElementById("gridTrap"), document.getElementById("playTrap"));
+players.dem = makePlayer(DEMBOW, document.getElementById("gridDem"), document.getElementById("playDem"));
+document.getElementById("playTrap").addEventListener("click", () => {
+  players.trap.playing ? players.trap.stop() : players.trap.start();
+});
+document.getElementById("playDem").addEventListener("click", () => {
+  players.dem.playing ? players.dem.stop() : players.dem.start();
+});
+
+// ---- Traducir y exportar ----
+document.getElementById("translateBtn").addEventListener("click", () => {
+  document.getElementById("secDem").hidden = false;
+  document.getElementById("secExpli").hidden = false;
+  document.getElementById("wavBtn").hidden = false;
+  document.getElementById("secDem").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+document.getElementById("wavBtn").addEventListener("click", async (e) => {
+  const btn = e.currentTarget;
+  btn.textContent = "Exportando...";
+  btn.disabled = true;
+  try {
+    const buf = await renderPattern(DEMBOW, 2);
+    const blob = bufferToWav(buf);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "traductor-dembow.wav";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    btn.textContent = "⬇ Bajar el dembow en WAV";
+  } catch (err) {
+    btn.textContent = "No se pudo exportar. Intenta de nuevo.";
+  }
+  btn.disabled = false;
+});
+
+// ---- Para verificación automatizada ----
+window.TRADUCTOR = { TRAP, DEMBOW, renderPattern, bufferToWav };
+</script>
+</body>
+</html>
