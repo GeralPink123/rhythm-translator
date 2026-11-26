@@ -186,7 +186,7 @@ Tercero, construir la app. La rejilla, el selector de género, el motor de regla
 - Desarme de Magenta: rea-magenta-kilo-analisis.md y rea-magenta-directo.md.
 - Reglas latinas: reglas-latinas-coqui-fm1.md, del repo https://github.com/saulofilho/coqui-fm1 (GPL-3.0, estudiar, no copiar código).
 - La bomba yubá en 6/8: alternativa-bomba-yuba-6-8.md.
-- Demo: traductor-demo/index.html, actualizada a 110 BPM el 24 de noviembre de 2026.
+- Demo: demo/index.html, actualizada a 110 BPM el 24 de noviembre de 2026.
 - Repo público: https://github.com/GeralPink123/rhythm-translator
 
 ---
